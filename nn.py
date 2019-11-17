@@ -1,7 +1,14 @@
 from typing import Tuple, List, Dict
 
 import keras
-
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.layers import Embedding
+from keras.layers import SimpleRNN, GRU, LSTM
+from keras.layers import Conv1D, GlobalAveragePooling1D, MaxPooling1D
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Bidirectional, GlobalMaxPooling1D
+from keras import optimizers
+from keras.callbacks import EarlyStopping
 
 def create_toy_rnn(input_shape: tuple,
                    n_outputs: int) -> Tuple[keras.Model, Dict]:
@@ -19,6 +26,14 @@ def create_toy_rnn(input_shape: tuple,
     :param n_outputs: The number of outputs from the model.
     :return: A tuple of (neural network, Model.fit keyword arguments)
     """
+    model = Sequential()
+    model.add(SimpleRNN(256, input_shape=input_shape, return_sequences=True, activation = 'tanh'))
+    model.add(Dense(1, activation="linear"))
+
+    model.compile(loss='mse',
+                optimizer='adam')
+
+    return (model, {}) 
 
 
 def create_mnist_cnn(input_shape: tuple,
@@ -37,6 +52,21 @@ def create_mnist_cnn(input_shape: tuple,
     :param n_outputs: The number of outputs from the model.
     :return: A tuple of (neural network, Model.fit keyword arguments)
     """
+    model = Sequential()
+    model.add(Conv2D(64, 3, activation='relu', input_shape=input_shape))
+    model.add(Conv2D(64, 3, activation='relu'))
+    model.add(MaxPooling2D(3))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(128, 3, activation='relu'))
+    model.add(MaxPooling2D(3))
+    model.add(Flatten())
+    model.add(Dense(n_outputs, activation='softmax'))
+
+    model.compile(loss='categorical_crossentropy',
+                optimizer='adam',
+                metrics=['accuracy'])
+
+    return (model, {})
 
 
 def create_youtube_comment_rnn(vocabulary: List[str],
@@ -62,6 +92,19 @@ def create_youtube_comment_rnn(vocabulary: List[str],
     :return: A tuple of (neural network, Model.fit keyword arguments)
     """
 
+    max_features = len(vocabulary)
+
+    model = Sequential()
+    model.add(Embedding(max_features, 200))
+    model.add(Bidirectional(GRU(64, activation='linear', dropout=0.5)))
+    model.add(Dense(n_outputs, activation='sigmoid'))
+    adam = optimizers.Adam(lr=0.01) 
+
+    model.compile(loss='binary_crossentropy',
+                optimizer=adam,
+                metrics=['accuracy'])
+
+    return (model, {})
 
 def create_youtube_comment_cnn(vocabulary: List[str],
                                n_outputs: int) -> Tuple[keras.Model, Dict]:
@@ -85,3 +128,21 @@ def create_youtube_comment_cnn(vocabulary: List[str],
     :param n_outputs: The number of outputs from the model.
     :return: A tuple of (neural network, Model.fit keyword arguments)
     """
+
+    max_features = len(vocabulary)
+
+    model = Sequential()
+    model.add(Embedding(max_features, 200))
+    model.add(Conv1D(64, 3, activation='relu'))
+    model.add(GlobalMaxPooling1D())
+    model.add(Dropout(0.25))
+    model.add(Dense(n_outputs, activation='sigmoid'))
+
+    adam = optimizers.Adam(lr=0.01)
+    model.compile(loss='binary_crossentropy',
+                optimizer=adam,
+                metrics=['accuracy'])
+
+    return (model, {})
+
+
